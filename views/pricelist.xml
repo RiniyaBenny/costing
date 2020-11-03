@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <odoo>
+
+        <!-- Add instructor field to existing view -->
+        <record model="ir.ui.view" id="currency_pricelist_form_view">
+            <field name="name">currency.pricelist</field>
+            <field name="model">res.currency</field>
+            <field name="inherit_id" ref="base.view_currency_form"/>
+            <field name="arch" type="xml">
+                <field name="name" position="after">
+                    <field name="pricelist"/>
+                </field>
+            </field>
+        </record>
+</odoo>
