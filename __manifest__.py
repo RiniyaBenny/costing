@@ -27,7 +27,6 @@
         'views/views.xml',
         'views/templates.xml',
         'views/costing.xml',
-        'views/pricelist.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

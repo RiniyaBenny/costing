@@ -4,19 +4,23 @@ from odoo import models, fields, api
 class Costing(models.Model):
     _name = 'costing.costing'
     _description = 'Costing'
+    _inherit = 'res.currency'
 
     customer = fields.Many2one('res.users',
                                   ondelete='set null', string="Customer", index=True)
-    season = fields.Char(default='Winter Season 2020-T24B11 Costing', string="Season")
+    name = fields.Char(required=True)
+    #season = fields.Char(default='Winter Season 2020 - T24B11', required=True)
     style_ref_name = fields.Char(default='PANTALOON', string="Style/Ref Name")
+    hide_inv_button = fields.Char()
     prod_concept = fields.Char(string='Product Concept')
-    type = fields.Selection([('prelimnary', 'Prelimnary Costing'), ('buyer_approved', 'Buyer Approved Costing'),
-                             ('factory_approved', 'Factory Approved Costing')])
-    company = fields.Char(string='Company')
-    pricelist = fields.Many2one('res.currency', string='Pricelist')
+    #type = fields.One2many('costing.costingtypes', 'costing_types')
+    type = fields.Many2one('costing.costingtypes', string="Type", required=True)
+    company = fields.Many2one('res.company', string='Company')
+    pricelist = fields.Many2one('product.pricelist', string='Pricelist')
     currency = fields.Many2one('res.currency', string='Currency')
-    stage = fields.Selection([('new', 'New'), ('progress', 'Progress'),
-                             ('approved', 'Approved'), ('effective', 'Effective')])
+    #stage = fields.One2many('costing.costingstages', 'costing_stages')
+    stage = fields.Many2one('costing.costingstages')
+    #stage = fields.Many2many('costing.costingstages')
     board = fields.Char(string='Board')
     order_qty = fields.Integer(string='Order Quantity', required=True, default=0)
     size_range = fields.Char(string='Size/Range', required=True, default='OBA')
@@ -32,7 +36,7 @@ class Costing(models.Model):
         _name = 'costing.costsheetlines'
         _description = 'Cost Sheet Lines'
 
-        particulars = fields.Char(string='Particulars')
+        #particulars = fields.Char(string='Particulars')
         desc = fields.Char(string='Description')
         placement = fields.Char(string='Placement')
         supplier = fields.Char(string='Supplier')
@@ -41,22 +45,42 @@ class Costing(models.Model):
         uom = fields.Char(string='UOM')
         curr = fields.Many2one('res.currency', string='Currency')
         cost_item = fields.Float(string='Cost of Item(Ex-works/CIF/CFR)')
-        costing = fields.Selection([('fabric', 'Fabric Cost'), ('accessories', 'Accessories Cost'),
-                             ('packing', 'Packing Materials Cost')])
-
+        costing_type = fields.Many2many('costing.costingtypes')
+        #costing_type = fields.Many2one('costing.costingtypes')
+        display_type = fields.Selection([
+            ('line_section', "Section"),
+            ('line_note', "Note")], default=False, help="Technical field for UX purpose.")
+        name = fields.Char(string="Particulars", required=True)
+        @api.onchange('costing_type')
+        def _onchange_costingtype(self):
+            return {'domain':{'costing_id': [('costing_type', '=', self.costing_type.id)]}}
 
     class CostingTypes(models.Model):
         _name = 'costing.costingtypes'
         _description = 'Costing Types'
 
-        name = fields.Char(string="Name")
+        name = fields.Char()
+        sequence = fields.Integer()
         costing_types = fields.Selection([('prelimnary', 'Prelimnary Costing'), ('buyer_approved', 'Buyer Approved Costing'),
-                                 ('factory_approved', 'Factory Approved Costing')])
-        prelim_costing = fields.Float(string="Prelimnary Costing")
-        buyer_approved = fields.Float(string="Buyer Approved Costing")
-        factory_approved = fields.Float(string="Factory Approved Costing")
-
+                             ('factory_approved', 'Factory Approved Costing')])
+        #costing_types = fields.One2many('costing.costing', 'type')
+        #prelim_costing = fields.Float(string="Prelimnary Costing")
+        #buyer_approved = fields.Float(string="Buyer Approved Costing")
+        #factory_approved = fields.Float(string="Factory Approved Costing")
 
     class CostingStages(models.Model):
         _name = 'costing.costingstages'
         _description = 'Costing Stages'
+
+        name = fields.Char()
+        sequence = fields.Integer()
+        approvals = fields.Char(default='Approvals')
+        costing_stages = fields.Selection([('new', 'New'), ('progress', 'Progress'),
+                                  ('approved', 'Approved'), ('effective', 'Effective')])
+        #costing_stages = fields.Char()
+        #costing_stages = fields.One2many('costing.costing', 'stage')
+        folded_in_kanban = fields.Boolean('Folded in kanban view')
+        allow_to_apply_changes = fields.Boolean('Allow to apply changes')
+        final_stage = fields.Boolean('Final Stage')
+        #types = fields.Many2many('costing.costingtypes')
+        types = fields.Many2one('costing.costingtypes', string="Type", required=True)
